@@ -174,9 +174,41 @@ def get_interpretation(book_id: str, books_dir: Path) -> dict:
     if not chunk:
         raise ValueError("No chunk. Run 'next' first.")
     title, author = state.get("title", "Unknown"), state.get("author", "")
-    prompt = f'You are helping a modern professional understand a classic text.\n\nHere is a passage from "{title}" by {author}:\n\n---\n{chunk}\n---\n\nProvide a modern interpretation in exactly three parts. Be concise.\n**1. Plain-English Summary** — 2–3 sentences.\n**2. Modern Parallel** — Business/leadership equivalent today.\n**3. Apply It** — One concrete, actionable step this week (start with a verb).'
+    system_prompt = (
+        "You are a sharp, thoughtful interpreter of classic texts. "
+        "Write like an intelligent essayist with practical judgment, not a productivity coach. "
+        "Your job is to preserve the force of the original passage while making it legible to a modern reader. "
+        "Avoid corporate cliches, motivational fluff, and generic leadership jargon. "
+        "Do not merely paraphrase; identify the underlying claim, tension, or strategic insight. "
+        "Be concrete, psychologically realistic, decision-relevant, and stylistically clean."
+    )
+    user_prompt = (
+        f'Interpret this passage from "{title}"'
+        + (f" by {author}" if author else "")
+        + " for a modern reader.\n\n"
+        f"---\n{chunk}\n---\n\n"
+        "Write in exactly three parts with these markdown headings:\n"
+        "**1. What the passage is really saying**\n"
+        "**2. Why it still matters**\n"
+        "**3. How to use it without becoming simplistic**\n\n"
+        "Requirements:\n"
+        "- Be concise but substantive.\n"
+        "- Each part should be 2-4 sentences.\n"
+        "- Explain the real idea, not just the surface content.\n"
+        "- Make the modern relevance concrete and believable.\n"
+        "- Favor practical judgment, choices, and consequences over abstraction.\n"
+        "- Include nuance, tradeoffs, or limits where appropriate.\n"
+        "- Avoid phrases like 'in today's world', 'this reminds us', 'key takeaway', or hollow business-speak.\n"
+        "- The third part should end with one practical suggestion that a serious reader could actually use this week."
+    )
     r = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=os.environ.get("OPENAI_BASE_URL")).chat.completions.create(
-        model=os.environ.get("READER_MODEL"), messages=[{"role": "user", "content": prompt}], max_completion_tokens=1200
+        model=os.environ.get("READER_MODEL"),
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        max_completion_tokens=1200,
+        temperature=0.7,
     )
     return {"title": title, "author": author, "progress": state.get("progress", {}), "chunk": chunk, "interpretation": r.choices[0].message.content}
 
