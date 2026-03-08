@@ -12,8 +12,10 @@ venv/
 .mypy_cache/
 
 # Generated outputs
-output_files/
+output_files/*
+!output_files/.gitkeep
 logs/*
+!logs/.gitkeep
 *.log
 run.log
 
@@ -22,9 +24,13 @@ run.log
 
 # Library files
 books/library/*
+!books/library/.gitkeep
 books/reading/*
+!books/reading/.gitkeep
 books/finished/*
+!books/finished/.gitkeep
 books/summaries/*
+!books/summaries/.gitkeep
 
 # Specific Deployment Files
 deploy/*
