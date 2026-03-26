@@ -59,7 +59,7 @@ LATEST_HTML="$(ls -1t -- output_files/*.html 2>/dev/null | head -n 1)"
 [[ -z "$LATEST_HTML" || ! -f "$LATEST_HTML" ]] && { echo "Error: no .html files in output_files" >&2; exit 1; }
 
 TITLE="$(sed -n 's/.*<h1>\([^<]*\)<\/h1>.*/\1/p' "$LATEST_HTML" | head -n 1)"
-PCT="$(sed -n 's/.*<div class="meta">.*\([0-9]\{1,3\}%\) complete.*/\1/p' "$LATEST_HTML" | head -n 1)"
+PCT="$(grep -oE '[0-9]{1,3}% complete' "$LATEST_HTML" | head -n 1 | cut -d' ' -f1)"
 if [[ -z "$TITLE" ]]; then
   TITLE="$(basename "$LATEST_HTML" .html)"
 fi
