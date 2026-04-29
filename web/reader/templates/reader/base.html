@@ -7,13 +7,17 @@
     <style>
       :root {
         color-scheme: light;
-        --ink: #24312f;
-        --muted: #687977;
-        --paper: #fbf7ef;
-        --panel: #fffdf8;
-        --line: #e6dccb;
-        --accent: #9b4f2f;
-        --accent-dark: #6e351f;
+        --ink: #242826;
+        --muted: #707773;
+        --paper: #fffdfa;
+        --panel: #ffffff;
+        --warm-panel: #fffaf3;
+        --line: #ece6dc;
+        --accent: #7f4a31;
+        --accent-dark: #5e3524;
+        --shadow: rgba(76, 58, 40, 0.07);
+        --serif: Georgia, "Times New Roman", serif;
+        --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       }
 
       * {
@@ -23,10 +27,10 @@
       body {
         margin: 0;
         background:
-          radial-gradient(circle at top left, rgba(155, 79, 47, 0.16), transparent 34rem),
-          linear-gradient(135deg, #fbf7ef 0%, #f1e7d3 100%);
+          radial-gradient(circle at top left, rgba(127, 74, 49, 0.06), transparent 32rem),
+          linear-gradient(135deg, #fffdfa 0%, #faf5ed 100%);
         color: var(--ink);
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: var(--serif);
         line-height: 1.6;
         min-height: 100vh;
       }
@@ -44,6 +48,7 @@
       .topbar {
         align-items: center;
         display: flex;
+        font-family: var(--sans);
         gap: 16px;
         justify-content: space-between;
         margin-bottom: 34px;
@@ -51,8 +56,9 @@
 
       .brand {
         color: var(--ink);
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 15px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
         text-decoration: none;
       }
 
@@ -66,28 +72,63 @@
       button {
         background: var(--accent);
         border: 0;
-        border-radius: 999px;
+        border-radius: 8px;
         color: white;
         cursor: pointer;
         display: inline-block;
-        font: inherit;
-        padding: 9px 16px;
+        font-family: var(--sans);
+        font-size: 14px;
+        font-weight: 550;
+        line-height: 1.2;
+        padding: 10px 14px;
         text-decoration: none;
+      }
+
+      .button:hover,
+      button:hover {
+        background: var(--accent-dark);
       }
 
       .button.secondary,
       button.secondary {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.72);
         border: 1px solid var(--line);
         color: var(--accent-dark);
       }
 
+      .button.secondary:hover,
+      button.secondary:hover {
+        background: #f8f3ea;
+      }
+
+      button:disabled {
+        background: #ece8e1;
+        color: #aaa39a;
+        cursor: not-allowed;
+      }
+
       .panel {
-        background: rgba(255, 253, 248, 0.88);
+        background: rgba(255, 255, 255, 0.86);
         border: 1px solid var(--line);
-        border-radius: 22px;
-        box-shadow: 0 20px 50px rgba(84, 57, 31, 0.12);
+        border-radius: 16px;
+        box-shadow: 0 18px 44px var(--shadow);
         padding: 28px;
+      }
+
+      .panel h1,
+      .panel h2:not(.notes h2),
+      .book-card,
+      .muted,
+      .actions,
+      label,
+      input {
+        font-family: var(--sans);
+      }
+
+      .panel h1,
+      .panel h2:not(.notes h2) {
+        letter-spacing: -0.035em;
+        line-height: 1.08;
       }
 
       .book-grid {
@@ -98,7 +139,7 @@
       .book-card {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: 18px;
+        border-radius: 14px;
         padding: 22px;
       }
 
@@ -107,27 +148,35 @@
       }
 
       .reader-text {
+        font-family: var(--serif);
         font-size: 20px;
         line-height: 1.85;
         white-space: pre-wrap;
       }
 
       .notes {
-        background: #f7efe1;
-        border-left: 4px solid var(--accent);
-        border-radius: 0 14px 14px 0;
+        background: var(--warm-panel);
+        border: 1px solid var(--line);
+        border-left: 3px solid rgba(127, 74, 49, 0.55);
+        border-radius: 0 10px 10px 0;
         margin-top: 28px;
         padding: 18px 22px;
       }
 
       .notes h2 {
+        font-family: var(--sans);
         font-size: 18px;
+        letter-spacing: -0.02em;
         margin: 0 0 8px;
       }
 
+      .notes div {
+        font-family: var(--serif);
+      }
+
       .progress {
-        background: #e7ddcc;
-        border-radius: 999px;
+        background: #eee8de;
+        border-radius: 8px;
         height: 8px;
         overflow: hidden;
       }
@@ -144,6 +193,15 @@
         flex-wrap: wrap;
         gap: 12px;
         margin-top: 22px;
+      }
+
+      input {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--ink);
+        font-size: 14px;
+        padding: 9px 10px;
       }
 
       .inline {
