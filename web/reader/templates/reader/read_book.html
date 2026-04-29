@@ -1,0 +1,42 @@
+{% extends "reader/base.html" %}
+
+{% block title %}Reading {{ book.title }} · Personal Librarian{% endblock %}
+
+{% block content %}
+  <article class="panel">
+    <p><a href="{{ book.get_absolute_url }}">Back to {{ book.title }}</a></p>
+    <h1>{{ book.title }}</h1>
+    {% if book.author %}<p class="muted">by {{ book.author }}</p>{% endif %}
+
+    {% if current_chunk %}
+      <p class="muted">
+        Chunk {{ current_chunk.index|add:1 }} of {{ total_chunks }} · {{ percent_complete }}% complete
+      </p>
+      <div class="progress" aria-label="{{ percent_complete }}% complete">
+        <span style="width: {{ percent_complete }}%"></span>
+      </div>
+      <hr />
+      <div class="reader-text">{{ current_chunk.text }}</div>
+      <div class="actions">
+        {% if previous_chunk %}
+          <a class="button secondary" href="{% url 'reader:read_chunk' book.slug previous_chunk.id %}">Previous</a>
+        {% else %}
+          <button class="secondary" type="button" disabled>Previous</button>
+        {% endif %}
+        {% if next_chunk %}
+          <a class="button" href="{% url 'reader:read_chunk' book.slug next_chunk.id %}">Next</a>
+        {% else %}
+          <button type="button" disabled>Next</button>
+        {% endif %}
+        <form method="post" action="{% url 'reader:jump_to_chunk' book.slug %}">
+          {% csrf_token %}
+          <label for="chunk-number">Jump to chunk</label>
+          <input id="chunk-number" name="chunk_number" type="number" min="1" max="{{ total_chunks }}" value="{{ current_chunk.index|add:1 }}" />
+          <button class="secondary" type="submit">Go</button>
+        </form>
+      </div>
+    {% else %}
+      <p>This book does not have any readable chunks yet. Ask a staff user to re-import it.</p>
+    {% endif %}
+  </article>
+{% endblock %}

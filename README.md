@@ -23,6 +23,7 @@ A reading system for progressing through difficult non-contemporary books in sma
 │   └── reference.md
 ├── output_files/       # Generated HTML output (gitignored)
 ├── logs/               # Logs (gitignored)
+├── web/                # Django web app, separated from the legacy CLI
 ├── AGENTS.md
 ├── CONTRIBUTING.md
 ├── read-book.py
@@ -37,8 +38,47 @@ A reading system for progressing through difficult non-contemporary books in sma
 - An OpenAI-compatible model endpoint for interpretation generation
 - Optional: Mailgun credentials for email delivery
 - Optional: a scheduler such as cron
+- Optional: Docker for running the Django web app
 
-## Quickstart
+## Django Web App
+
+The Django app lives in `web/` so it can be developed and migrated independently from the current `read-book.py` CLI flow.
+
+### Local setup
+
+```bash
+uv venv
+uv pip install -r requirements.txt
+cd web
+uv run python manage.py migrate
+uv run python manage.py createsuperuser
+uv run python manage.py runserver
+```
+
+Open `http://127.0.0.1:8000/`, log in with an admin-created account, and use `/admin/` to add books. Books are stored in SQLite and chunked on import.
+
+### Docker setup
+
+```bash
+cp .env.example .env
+docker compose up --build
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+```
+
+The Docker setup runs the Django app only. The SQLite database is stored in the `django_data` Docker volume.
+
+Required Django environment variables:
+
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG`
+- `DJANGO_ALLOWED_HOSTS`
+
+Optional Django environment variables:
+
+- `DATABASE_PATH`
+
+## Legacy CLI Quickstart
 
 ### 1. Install dependencies
 
@@ -61,8 +101,8 @@ cp .env.example .env
 
 ### 4. Add a book
 
-- Put a `.txt` book in `books/library/`, project Gutenberg is a good source for public domain books
-- `uv run python read-book.py start <book_id>` will create `books/reading/<book_id>.json` automatically if it does not already exist
+- Put a `.txt` book in `books/library/`, Project Gutenberg is a good source for public domain books
+- `uv run read-book.py start <book_id>` will create `books/reading/<book_id>.json` automatically if it does not already exist
 - See [docs/reference.md](docs/reference.md) for the state file shape and command reference
 
 ### 5. Start reading

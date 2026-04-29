@@ -1,0 +1,22 @@
+{% extends "reader/base.html" %}
+
+{% block title %}{{ book.title }} · Personal Librarian{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <p><a href="{% url 'reader:book_list' %}">Back to books</a></p>
+    <h1>{{ book.title }}</h1>
+    {% if book.author %}<p class="muted">by {{ book.author }}</p>{% endif %}
+    <p>{{ book.chunks.count }} chunks · {{ book.total_lines }} lines</p>
+    <div class="actions">
+      {% if progress and progress.current_chunk %}
+        <a class="button" href="{% url 'reader:read_chunk' book.slug progress.current_chunk.id %}">Continue reading</a>
+      {% else %}
+        <form method="post" action="{% url 'reader:start_book' book.slug %}">
+          {% csrf_token %}
+          <button type="submit">Start reading</button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

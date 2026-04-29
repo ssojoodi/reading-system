@@ -16,6 +16,9 @@ output_files/*
 !output_files/.gitkeep
 logs/*
 !logs/.gitkeep
+web/db.sqlite3
+web/staticfiles/
+web/data/
 *.log
 run.log
 

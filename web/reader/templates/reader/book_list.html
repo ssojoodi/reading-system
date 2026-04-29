@@ -1,0 +1,27 @@
+{% extends "reader/base.html" %}
+
+{% block title %}Books · Personal Librarian{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <h1>Books</h1>
+    <p class="muted">Choose a book and continue reading one chunk at a time.</p>
+    <div class="book-grid">
+      {% for item in book_items %}
+        <article class="book-card">
+          <h2><a href="{{ item.book.get_absolute_url }}">{{ item.book.title }}</a></h2>
+          {% if item.book.author %}<p class="muted">by {{ item.book.author }}</p>{% endif %}
+          <p class="muted">{{ item.book.chunks.count }} chunks · {{ item.book.total_lines }} lines</p>
+          {% if item.progress and item.progress.current_chunk %}
+            <p>{{ item.progress.percent_complete }}% complete · chunk {{ item.progress.current_chunk.index|add:1 }}</p>
+            <a class="button" href="{% url 'reader:read_chunk' item.book.slug item.progress.current_chunk.id %}">Continue</a>
+          {% else %}
+            <a class="button secondary" href="{{ item.book.get_absolute_url }}">View book</a>
+          {% endif %}
+        </article>
+      {% empty %}
+        <p>No books have been imported yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

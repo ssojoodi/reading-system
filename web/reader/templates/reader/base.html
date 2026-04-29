@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Personal Librarian{% endblock %}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #24312f;
+        --muted: #687977;
+        --paper: #fbf7ef;
+        --panel: #fffdf8;
+        --line: #e6dccb;
+        --accent: #9b4f2f;
+        --accent-dark: #6e351f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(155, 79, 47, 0.16), transparent 34rem),
+          linear-gradient(135deg, #fbf7ef 0%, #f1e7d3 100%);
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      a {
+        color: var(--accent-dark);
+      }
+
+      .shell {
+        margin: 0 auto;
+        max-width: 920px;
+        padding: 28px 20px 56px;
+      }
+
+      .topbar {
+        align-items: center;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        margin-bottom: 34px;
+      }
+
+      .brand {
+        color: var(--ink);
+        font-size: 20px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .nav {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+      }
+
+      .button,
+      button {
+        background: var(--accent);
+        border: 0;
+        border-radius: 999px;
+        color: white;
+        cursor: pointer;
+        display: inline-block;
+        font: inherit;
+        padding: 9px 16px;
+        text-decoration: none;
+      }
+
+      .button.secondary,
+      button.secondary {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--accent-dark);
+      }
+
+      .panel {
+        background: rgba(255, 253, 248, 0.88);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 20px 50px rgba(84, 57, 31, 0.12);
+        padding: 28px;
+      }
+
+      .book-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .book-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .reader-text {
+        font-size: 20px;
+        line-height: 1.85;
+        white-space: pre-wrap;
+      }
+
+      .progress {
+        background: #e7ddcc;
+        border-radius: 999px;
+        height: 8px;
+        overflow: hidden;
+      }
+
+      .progress span {
+        background: var(--accent);
+        display: block;
+        height: 100%;
+      }
+
+      .actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .inline {
+        display: inline;
+      }
+
+      @media (max-width: 640px) {
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .panel {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="{% url 'reader:book_list' %}">Personal Librarian</a>
+        <nav class="nav">
+          {% if request.user.is_authenticated %}
+            <span class="muted">{{ request.user.username }}</span>
+            <form class="inline" method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="secondary" type="submit">Log out</button>
+            </form>
+          {% endif %}
+        </nav>
+      </header>
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
