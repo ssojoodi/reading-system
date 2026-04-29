@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -50,7 +51,9 @@ def save_state(book_id: str, state: dict, books_dir: Path) -> None:
 
 
 def _default_title(book_id: str) -> str:
-    return re.sub(r"\s+", " ", book_id.replace("-", " ").replace("_", " ")).strip().title()
+    return (
+        re.sub(r"\s+", " ", book_id.replace("-", " ").replace("_", " ")).strip().title()
+    )
 
 
 def ensure_state(book_id: str, books_dir: Path) -> tuple[dict, bool]:
@@ -60,7 +63,9 @@ def ensure_state(book_id: str, books_dir: Path) -> tuple[dict, bool]:
         book_path = books_dir / "library" / f"{book_id}.txt"
         if not book_path.exists():
             raise FileNotFoundError(f"Book not found: {book_id}")
-        total_lines = len(book_path.read_text(encoding="utf-8", errors="replace").splitlines())
+        total_lines = len(
+            book_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        )
         state = {
             "bookId": book_id,
             "title": _default_title(book_id),
@@ -165,7 +170,16 @@ def show_status(books_dir: Path) -> list:
     for p in sorted(r.glob("*.json")):
         s = json.loads(p.read_text(encoding="utf-8"))
         prog = s.get("progress", {})
-        out.append({"bookId": s.get("bookId"), "title": s.get("title"), "author": s.get("author", ""), "status": s.get("status"), "progress": prog.get("estimatedPosition"), "lastRead": prog.get("lastChunkSent")})
+        out.append(
+            {
+                "bookId": s.get("bookId"),
+                "title": s.get("title"),
+                "author": s.get("author", ""),
+                "status": s.get("status"),
+                "progress": prog.get("estimatedPosition"),
+                "lastRead": prog.get("lastChunkSent"),
+            }
+        )
     return out
 
 
@@ -201,16 +215,32 @@ def get_interpretation(book_id: str, books_dir: Path) -> dict:
         "- Avoid phrases like 'in today's world', 'this reminds us', 'key takeaway', or hollow business-speak.\n"
         "- The third part should end with one practical suggestion that a serious reader could actually use this week."
     )
-    r = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=os.environ.get("OPENAI_BASE_URL")).chat.completions.create(
+    if os.environ.get("TEST_MODE") == "true":
+        return {
+            "title": title,
+            "author": author,
+            "progress": state.get("progress", {}),
+            "chunk": chunk,
+            "interpretation": "TEST_INTERPRETATION",
+        }
+    r = OpenAI(
+        api_key=os.environ.get("OPENAI_API_KEY"),
+        base_url=os.environ.get("OPENAI_BASE_URL"),
+    ).chat.completions.create(
         model=os.environ.get("READER_MODEL"),
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         max_completion_tokens=1200,
-        temperature=0.7,
     )
-    return {"title": title, "author": author, "progress": state.get("progress", {}), "chunk": chunk, "interpretation": r.choices[0].message.content}
+    return {
+        "title": title,
+        "author": author,
+        "progress": state.get("progress", {}),
+        "chunk": chunk,
+        "interpretation": r.choices[0].message.content,
+    }
 
 
 def _interp_html(text: str) -> str:
@@ -218,27 +248,29 @@ def _interp_html(text: str) -> str:
         return ""
     out = []
     for p in [p.strip() for p in text.split("\n\n") if p.strip()]:
-        p = re.sub(r"\*(.+?)\*", r"<em>\1</em>", re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html.escape(p)))
+        p = re.sub(
+            r"\*(.+?)\*",
+            r"<em>\1</em>",
+            re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html.escape(p)),
+        )
         out.append(f"        <p>{p}</p>")
     return "\n\n".join(out)
 
 
-_CSS = """
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; max-width: 680px; margin: 40px auto; padding: 24px; color: #333; background: #fff; }
-        .email-header { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-        h1 { color: #2c3e50; font-size: 26px; margin: 0 0 4px 0; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
-        .meta { font-size: 12px; color: #95a5a6; margin-bottom: 4px; }
-        .section-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7f8c8d; margin: 24px 0 8px 0; }
-        .original-text { background: #f8f9fa; border-left: 4px solid #3498db; padding: 16px 20px; font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #2c3e50; border-radius: 0 4px 4px 0; margin: 8px 0 20px 0; white-space: pre-wrap; }
-        .interpretation { background: #fdfefe; border-left: 4px solid #27ae60; padding: 16px 20px; font-size: 15px; line-height: 1.8; color: #333; border-radius: 0 4px 4px 0; margin: 8px 0 20px 0; }
-        .interpretation p { margin: 0 0 1em 0; }
-        .interpretation p:last-child { margin-bottom: 0; }
-        .progress-bar { background: #ecf0f1; border-radius: 4px; height: 6px; margin: 6px 0 2px 0; overflow: hidden; }
-        .progress-fill { background: #3498db; height: 100%; border-radius: 4px; }
-        .progress-label { font-size: 12px; color: #95a5a6; }
-        hr { border: none; border-top: 1px solid #ecf0f1; margin: 28px 0; }
-        .email-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #ecf0f1; font-size: 12px; color: #aaa; text-align: center; }
-"""
+_jinja_env: Optional[Environment] = None
+
+
+def _get_jinja_env() -> Environment:
+    global _jinja_env
+    if _jinja_env is None:
+        template_dir = Path(__file__).resolve().parent / "templates"
+        _jinja_env = Environment(
+            loader=FileSystemLoader(str(template_dir)),
+            autoescape=select_autoescape(["html", "htm", "xml"]),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+    return _jinja_env
 
 
 def build_reading_html(
@@ -253,29 +285,20 @@ def build_reading_html(
 ) -> str:
     now = datetime.now(timezone.utc)
     date_str = f"{now.strftime('%A')} · {now.strftime('%B %d, %Y')} · Morning"
-    return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morning Reading — {html.escape(title)}</title>
-    <style>{_CSS}</style>
-</head>
-<body>
-    <div class="email-header">{date_str}</div>
-    <h1>{html.escape(title)}</h1>
-    <div class="meta">{html.escape(author)} &nbsp;·&nbsp; {pct} complete &nbsp;·&nbsp; Line {current_line:,} of {total_lines:,}</div>
-    <div class="progress-bar"><div class="progress-fill" style="width:{pct}"></div></div>
-    <div class="progress-label">{pct} through the book</div>
-    <hr>
-    <div class="section-label">📜 Original Text</div>
-    <div class="original-text">{html.escape(chunk)}</div>
-    <div class="section-label">💡 Interpretation</div>
-    <div class="interpretation">
-{_interp_html(interpretation)}
-    </div>
-    <div class="email-footer">Reading {html.escape(title)} by {html.escape(author)} &nbsp;·&nbsp; Line {current_line:,} of {total_lines:,}</div>
-</body>
-</html>"""
+    return (
+        _get_jinja_env()
+        .get_template("reading_email.html")
+        .render(
+            title=title,
+            author=author,
+            chunk=chunk,
+            interpretation_html=_interp_html(interpretation),
+            date_str=date_str,
+            pct=pct,
+            current_line_display=f"{current_line:,}",
+            total_lines_display=f"{total_lines:,}",
+        )
+    )
 
 
 def main() -> None:
@@ -289,13 +312,19 @@ def main() -> None:
     start_parser = sub.add_parser("start", help="Start book")
     start_parser.add_argument("book_id", help="Book ID")
     start_parser.add_argument(
-        "--line", "-l", type=int, default=None, metavar="N",
+        "--line",
+        "-l",
+        type=int,
+        default=None,
+        metavar="N",
         help="Start from line N (1-based)",
     )
     args = parser.parse_args()
 
     def book_id() -> str:
-        bid = getattr(args, "book_id", None) or (get_active_book(books_dir) or {}).get("bookId")
+        bid = getattr(args, "book_id", None) or (get_active_book(books_dir) or {}).get(
+            "bookId"
+        )
         if not bid:
             print("No active book. Use: read-book.py start <book_id>", file=sys.stderr)
             sys.exit(1)
@@ -318,13 +347,20 @@ def main() -> None:
                 path = _norm_path(s["filePath"], books_dir)
                 if not path.exists():
                     raise FileNotFoundError(f"Book file not found: {path}")
-                total = len(path.read_text(encoding="utf-8", errors="replace").splitlines())
+                total = len(
+                    path.read_text(encoding="utf-8", errors="replace").splitlines()
+                )
                 if line > total:
-                    print(f"Error: --line {line} exceeds book length ({total} lines)", file=sys.stderr)
+                    print(
+                        f"Error: --line {line} exceeds book length ({total} lines)",
+                        file=sys.stderr,
+                    )
                     sys.exit(1)
                 s.setdefault("progress", {})["currentLine"] = line - 1
                 s["progress"]["totalLines"] = total
-                s["progress"]["estimatedPosition"] = f"{round((line - 1) / total * 100)}%"
+                s["progress"]["estimatedPosition"] = (
+                    f"{round((line - 1) / total * 100)}%"
+                )
                 save_state(args.book_id, s, books_dir)
                 msg += f" from line {line}"
             if created:
@@ -334,7 +370,16 @@ def main() -> None:
         bid = book_id()
         chunk_result = read_next_chunk(bid, books_dir)
         if chunk_result["finished"]:
-            print(json.dumps({"message": "Book finished", "title": chunk_result["title"], "progress": chunk_result["progress"]}, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "message": "Book finished",
+                        "title": chunk_result["title"],
+                        "progress": chunk_result["progress"],
+                    },
+                    indent=2,
+                )
+            )
             return
         interp = get_interpretation(bid, books_dir)
         prog = interp["progress"]
@@ -353,7 +398,9 @@ def main() -> None:
             ),
             encoding="utf-8",
         )
-        print(json.dumps({"output": str(out_path.resolve()), "progress": prog}, indent=2))
+        print(
+            json.dumps({"output": str(out_path.resolve()), "progress": prog}, indent=2)
+        )
     except (FileNotFoundError, ValueError, RuntimeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

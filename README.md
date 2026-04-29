@@ -76,6 +76,22 @@ uv run python read-book.py status
 Note: `<book_id>` is the filename of the book in `books/library/` without the `.txt` extension.
 The `next` command writes an HTML file to `output_files/` and advances progress in `books/reading/<book_id>.json`.
 
+## Test Mode
+
+Use `TEST_MODE=true` when you want to exercise the reading flow without calling the OpenAI-compatible API.
+
+```bash
+TEST_MODE=true uv run python read-book.py next <book_id>
+```
+
+In test mode, `next` still reads from `books/library/`, advances the book state in `books/reading/`, and writes an HTML artifact to `output_files/`. The generated interpretation is replaced with the text "TEST_INTERPRETATION", so `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `READER_MODEL` are not used for that run.
+
+To test email delivery without sending an email, generate an HTML artifact first and then run:
+
+```bash
+./send-daily.sh --dry-run
+```
+
 ## Email Delivery Options
 
 ### Mailgun

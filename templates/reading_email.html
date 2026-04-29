@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Morning Reading — {{ title }}</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.7;
+        max-width: 680px;
+        margin: 40px auto;
+        padding: 24px;
+        color: #333;
+        background: #fff;
+      }
+      .email-header {
+        font-size: 13px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+      }
+      h1 {
+        color: #2c3e50;
+        font-size: 26px;
+        margin: 0 0 4px 0;
+        border-bottom: 3px solid #3498db;
+        padding-bottom: 10px;
+      }
+      .meta {
+        font-size: 12px;
+        color: #95a5a6;
+        margin-bottom: 4px;
+      }
+      .section-label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7f8c8d;
+        margin: 24px 0 8px 0;
+      }
+      .original-text {
+        background: #f8f9fa;
+        border-left: 4px solid #3498db;
+        padding: 16px 20px;
+        font-family: Georgia, serif;
+        font-size: 15px;
+        line-height: 1.8;
+        color: #2c3e50;
+        border-radius: 0 4px 4px 0;
+        margin: 8px 0 20px 0;
+        white-space: pre-wrap;
+      }
+      .interpretation {
+        background: #fdfefe;
+        border-left: 4px solid #27ae60;
+        padding: 16px 20px;
+        font-size: 15px;
+        line-height: 1.8;
+        color: #333;
+        border-radius: 0 4px 4px 0;
+        margin: 8px 0 20px 0;
+      }
+      .interpretation p {
+        margin: 0 0 1em 0;
+      }
+      .interpretation p:last-child {
+        margin-bottom: 0;
+      }
+      .progress-bar {
+        background: #ecf0f1;
+        border-radius: 4px;
+        height: 6px;
+        margin: 6px 0 2px 0;
+        overflow: hidden;
+      }
+      .progress-fill {
+        background: #3498db;
+        height: 100%;
+        border-radius: 4px;
+      }
+      .progress-label {
+        font-size: 12px;
+        color: #95a5a6;
+      }
+      hr {
+        border: none;
+        border-top: 1px solid #ecf0f1;
+        margin: 28px 0;
+      }
+      .email-footer {
+        margin-top: 40px;
+        padding-top: 16px;
+        border-top: 1px solid #ecf0f1;
+        font-size: 12px;
+        color: #aaa;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-header">{{ date_str }}</div>
+    <h1>{{ title }}</h1>
+    <div class="meta">
+      {{ author }} &nbsp;·&nbsp; {{ pct }} complete &nbsp;·&nbsp; Line {{
+      current_line_display }} of {{ total_lines_display }}
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: {{ pct }}"></div>
+    </div>
+    <div class="progress-label">{{ pct }} through the book</div>
+    <hr />
+    <div class="section-label">📜 Original Text</div>
+    <div class="original-text">{{ chunk }}</div>
+    <div class="section-label">💡 Interpretation</div>
+    <div class="interpretation">{{ interpretation_html|safe }}</div>
+    <div class="email-footer">
+      Reading {{ title }} by {{ author }} with Sojoodi. If you'd like to
+      discontinue this, please click the unsubscribe link.
+    </div>
+  </body>
+</html>
