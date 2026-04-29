@@ -15,9 +15,4 @@ urlpatterns = [
         views.read_chunk,
         name="read_chunk",
     ),
-    path(
-        "books/<slug:slug>/read/<str:direction>/",
-        views.move_between_chunks,
-        name="move_between_chunks",
-    ),
 ]

@@ -39,21 +39,29 @@ class ReaderViewTests(TestCase):
         progress = UserBookProgress.objects.get(user=self.user, book=self.book)
         self.assertEqual(progress.current_chunk.index, 0)
 
-    def test_next_and_previous_update_current_user_progress(self):
+    def test_next_and_previous_links_use_chunk_urls(self):
         self.client.login(username="reader", password="password")
-        self.client.post(reverse("reader:start_book", args=[self.book.slug]))
+        first_chunk = self.book.chunks.get(index=0)
+        second_chunk = self.book.chunks.get(index=1)
 
-        self.client.post(
-            reverse("reader:move_between_chunks", args=[self.book.slug, "next"])
+        first_response = self.client.get(
+            reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
+        )
+        self.assertContains(
+            first_response,
+            reverse("reader:read_chunk", args=[self.book.slug, second_chunk.id]),
+        )
+
+        second_response = self.client.get(
+            reverse("reader:read_chunk", args=[self.book.slug, second_chunk.id])
+        )
+        self.assertContains(
+            second_response,
+            reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id]),
         )
         progress = UserBookProgress.objects.get(user=self.user, book=self.book)
-        self.assertEqual(progress.current_chunk.index, 1)
-
-        self.client.post(
-            reverse("reader:move_between_chunks", args=[self.book.slug, "previous"])
-        )
         progress.refresh_from_db()
-        self.assertEqual(progress.current_chunk.index, 0)
+        self.assertEqual(progress.current_chunk.index, 1)
 
     def test_read_view_renders_current_chunk(self):
         self.client.login(username="reader", password="password")

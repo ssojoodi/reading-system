@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import Book, BookChunk, UserBookProgress
-from .services import move_progress, set_progress_to_chunk, start_book_for_user
+from .services import set_progress_to_chunk, start_book_for_user
 
 
 @login_required
@@ -97,19 +97,6 @@ def read_chunk(request, slug, chunk_id):
             "percent_complete": percent_complete,
         },
     )
-
-
-@login_required
-@require_POST
-def move_between_chunks(request, slug, direction):
-    if direction not in {"next", "previous"}:
-        return redirect("reader:read_book", slug=slug)
-    book = get_object_or_404(Book, slug=slug)
-    progress = start_book_for_user(book, request.user)
-    move_progress(progress, direction)
-    if progress.current_chunk is None:
-        return redirect("reader:read_book", slug=book.slug)
-    return redirect("reader:read_chunk", slug=book.slug, chunk_id=progress.current_chunk_id)
 
 
 @login_required
