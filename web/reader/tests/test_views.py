@@ -65,6 +65,59 @@ class ReaderViewTests(TestCase):
 
         self.assertContains(response, "First chunk.")
         self.assertContains(response, "Chunk 1 of 2")
+        self.assertNotContains(response, "Notes")
+
+    def test_read_view_renders_notes_when_notes_exist(self):
+        self.client.login(username="reader", password="password")
+        first_chunk = self.book.chunks.get(index=0)
+        first_chunk.notes = "A useful note.\nWith a second line."
+        first_chunk.save()
+
+        response = self.client.get(
+            reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
+        )
+
+        self.assertContains(response, "Notes")
+        self.assertContains(response, "A useful note.")
+        self.assertContains(response, "With a second line.")
+
+    def test_read_view_allows_simple_note_html(self):
+        self.client.login(username="reader", password="password")
+        first_chunk = self.book.chunks.get(index=0)
+        first_chunk.notes = (
+            "A <strong>strong</strong>, <b>bold</b>, "
+            "<em>emphasized</em>, and <i>italic</i> note."
+        )
+        first_chunk.save()
+
+        response = self.client.get(
+            reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
+        )
+
+        self.assertContains(response, "<strong>strong</strong>", html=True)
+        self.assertContains(response, "<b>bold</b>", html=True)
+        self.assertContains(response, "<em>emphasized</em>", html=True)
+        self.assertContains(response, "<i>italic</i>", html=True)
+
+    def test_read_view_strips_unsafe_note_html(self):
+        self.client.login(username="reader", password="password")
+        first_chunk = self.book.chunks.get(index=0)
+        first_chunk.notes = (
+            '<strong onclick="alert(1)">safe text</strong>'
+            '<script>alert("bad")</script>'
+            '<a href="https://example.com">link text</a>'
+        )
+        first_chunk.save()
+
+        response = self.client.get(
+            reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
+        )
+
+        self.assertContains(response, "<strong>safe text</strong>", html=True)
+        self.assertNotContains(response, "onclick")
+        self.assertNotContains(response, "<script")
+        self.assertNotContains(response, 'href="https://example.com"')
+        self.assertContains(response, "link text")
 
     def test_read_view_redirects_to_current_chunk_url(self):
         self.client.login(username="reader", password="password")

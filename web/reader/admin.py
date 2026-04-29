@@ -41,7 +41,7 @@ class BookAdminForm(forms.ModelForm):
 
 class BookChunkInline(admin.TabularInline):
     model = BookChunk
-    fields = ["index", "start_line", "end_line", "char_count"]
+    fields = ["index", "start_line", "end_line", "char_count", "has_notes"]
     readonly_fields = fields
     extra = 0
     can_delete = False
@@ -49,6 +49,10 @@ class BookChunkInline(admin.TabularInline):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+    @admin.display(boolean=True, description="Notes")
+    def has_notes(self, obj):
+        return bool(obj.notes.strip())
 
 
 @admin.register(Book)
@@ -83,14 +87,34 @@ class BookAdmin(admin.ModelAdmin):
 
 @admin.register(BookChunk)
 class BookChunkAdmin(admin.ModelAdmin):
-    list_display = ["book", "display_index", "start_line", "end_line", "char_count"]
+    list_display = [
+        "book",
+        "display_index",
+        "start_line",
+        "end_line",
+        "char_count",
+        "has_notes",
+    ]
     list_filter = ["book"]
-    search_fields = ["book__title", "text"]
+    search_fields = ["book__title", "text", "notes"]
     readonly_fields = ["book", "index", "text", "start_line", "end_line", "char_count"]
+    fields = [
+        "book",
+        "index",
+        "text",
+        "notes",
+        "start_line",
+        "end_line",
+        "char_count",
+    ]
 
     @admin.display(description="Chunk")
     def display_index(self, obj):
         return obj.index + 1
+
+    @admin.display(boolean=True, description="Notes")
+    def has_notes(self, obj):
+        return bool(obj.notes.strip())
 
 
 @admin.register(UserBookProgress)

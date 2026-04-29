@@ -27,6 +27,7 @@ class BookChunk(models.Model):
     book = models.ForeignKey(Book, related_name="chunks", on_delete=models.CASCADE)
     index = models.PositiveIntegerField()
     text = models.TextField()
+    notes = models.TextField(blank=True)
     start_line = models.PositiveIntegerField()
     end_line = models.PositiveIntegerField()
     char_count = models.PositiveIntegerField()

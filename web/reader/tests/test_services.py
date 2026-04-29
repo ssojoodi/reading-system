@@ -39,6 +39,7 @@ class ChunkingTests(TestCase):
         self.assertEqual(first_count, 2)
         self.assertEqual(book.chunks.count(), 1)
         self.assertEqual(book.chunks.first().text, "Gamma paragraph only.")
+        self.assertEqual(book.chunks.first().notes, "")
 
 
 class ProgressTests(TestCase):
