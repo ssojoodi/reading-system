@@ -233,7 +233,6 @@ def get_interpretation(book_id: str, books_dir: Path) -> dict:
             {"role": "user", "content": user_prompt},
         ],
         max_completion_tokens=1200,
-        temperature=0.7,
     )
     return {
         "title": title,
