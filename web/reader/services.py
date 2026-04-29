@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from .models import Book, BookChunk, UserBookProgress
@@ -62,6 +63,8 @@ def split_text_into_chunks(
 
 @transaction.atomic
 def regenerate_book_chunks(book: Book) -> list[BookChunk]:
+    if book.status == Book.Status.FINALIZED:
+        raise ValidationError("Cannot regenerate chunks for finalized books.")
     chunks = split_text_into_chunks(book.full_text, book.chunk_size)
     book.chunks.all().delete()
     created_chunks = [

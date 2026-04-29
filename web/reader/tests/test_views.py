@@ -19,6 +19,8 @@ class ReaderViewTests(TestCase):
             chunk_size=8,
         )
         regenerate_book_chunks(self.book)
+        self.book.status = Book.Status.FINALIZED
+        self.book.save()
 
     def test_anonymous_user_redirects_to_login(self):
         response = self.client.get(reverse("reader:book_list"))
@@ -77,9 +79,13 @@ class ReaderViewTests(TestCase):
 
     def test_read_view_renders_notes_when_notes_exist(self):
         self.client.login(username="reader", password="password")
+        self.book.status = Book.Status.INTERPRETED
+        self.book.save()
         first_chunk = self.book.chunks.get(index=0)
         first_chunk.notes = "A useful note.\nWith a second line."
         first_chunk.save()
+        self.book.status = Book.Status.FINALIZED
+        self.book.save()
 
         response = self.client.get(
             reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
@@ -91,12 +97,16 @@ class ReaderViewTests(TestCase):
 
     def test_read_view_allows_simple_note_html(self):
         self.client.login(username="reader", password="password")
+        self.book.status = Book.Status.INTERPRETED
+        self.book.save()
         first_chunk = self.book.chunks.get(index=0)
         first_chunk.notes = (
             "A <strong>strong</strong>, <b>bold</b>, "
             "<em>emphasized</em>, and <i>italic</i> note."
         )
         first_chunk.save()
+        self.book.status = Book.Status.FINALIZED
+        self.book.save()
 
         response = self.client.get(
             reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
@@ -109,6 +119,8 @@ class ReaderViewTests(TestCase):
 
     def test_read_view_strips_unsafe_note_html(self):
         self.client.login(username="reader", password="password")
+        self.book.status = Book.Status.INTERPRETED
+        self.book.save()
         first_chunk = self.book.chunks.get(index=0)
         first_chunk.notes = (
             '<strong onclick="alert(1)">safe text</strong>'
@@ -116,6 +128,8 @@ class ReaderViewTests(TestCase):
             '<a href="https://example.com">link text</a>'
         )
         first_chunk.save()
+        self.book.status = Book.Status.FINALIZED
+        self.book.save()
 
         response = self.client.get(
             reverse("reader:read_chunk", args=[self.book.slug, first_chunk.id])
@@ -165,3 +179,30 @@ class ReaderViewTests(TestCase):
         )
         progress = UserBookProgress.objects.get(user=self.user, book=self.book)
         self.assertEqual(progress.current_chunk, second_chunk)
+
+    def test_book_list_hides_non_finalized_books(self):
+        Book.objects.create(
+            slug="draft-book",
+            title="Draft Book",
+            status=Book.Status.CHUNKED,
+            full_text="Draft text.",
+        )
+        self.client.login(username="reader", password="password")
+
+        response = self.client.get(reverse("reader:book_list"))
+
+        self.assertContains(response, "View Book")
+        self.assertNotContains(response, "Draft Book")
+
+    def test_non_finalized_book_detail_404s(self):
+        draft = Book.objects.create(
+            slug="draft-book",
+            title="Draft Book",
+            status=Book.Status.NEW,
+            full_text="Draft text.",
+        )
+        self.client.login(username="reader", password="password")
+
+        response = self.client.get(reverse("reader:book_detail", args=[draft.slug]))
+
+        self.assertEqual(response.status_code, 404)

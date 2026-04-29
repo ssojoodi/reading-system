@@ -3,25 +3,82 @@
 {% block title %}Books · Personal Librarian{% endblock %}
 
 {% block content %}
-  <section class="panel">
-    <h1>Books</h1>
-    <p class="muted">Choose a book and continue reading one chunk at a time.</p>
-    <div class="book-grid">
+  <div class="bookshelf-layout">
+    <aside class="bookshelf-intro">
+      <p class="eyebrow">Bookshelf</p>
+      <h1 class="bookshelf-title">Reading desk</h1>
+      <p class="bookshelf-copy">
+        Choose a book and continue reading one interpreted chunk at a time.
+      </p>
+      <div class="today-card">
+        <strong>Today</strong>
+        <p>{{ book_items|length }} books are available in your catalog.</p>
+      </div>
+    </aside>
+
+    <section class="book-grid" aria-label="Books">
       {% for item in book_items %}
         <article class="book-card">
-          <h2><a href="{{ item.book.get_absolute_url }}">{{ item.book.title }}</a></h2>
-          {% if item.book.author %}<p class="muted">by {{ item.book.author }}</p>{% endif %}
-          <p class="muted">{{ item.book.chunks.count }} chunks · {{ item.book.total_lines }} lines</p>
-          {% if item.progress and item.progress.current_chunk %}
-            <p>{{ item.progress.percent_complete }}% complete · chunk {{ item.progress.current_chunk.index|add:1 }}</p>
-            <a class="button" href="{% url 'reader:read_chunk' item.book.slug item.progress.current_chunk.id %}">Continue</a>
-          {% else %}
-            <a class="button secondary" href="{{ item.book.get_absolute_url }}">View book</a>
-          {% endif %}
+          <div class="book-stripe" aria-hidden="true"></div>
+          <div class="book-hover-cover" aria-hidden="true">
+            {% if item.book.thumbnail_data_url %}
+              <img src="{{ item.book.thumbnail_data_url }}" alt="" />
+            {% endif %}
+            <span>{{ item.book.title }}</span>
+          </div>
+          <div class="book-card-body">
+            <div class="book-card-head">
+              <div>
+                <h2><a href="{{ item.book.get_absolute_url }}">{{ item.book.title }}</a></h2>
+                {% if item.book.author %}<p class="book-author">{{ item.book.author }}</p>{% endif %}
+              </div>
+              {% if item.progress and item.progress.current_chunk %}
+                <span class="book-badge">Chunk {{ item.progress.current_chunk.index|add:1 }}</span>
+              {% else %}
+                <span class="book-badge">Not started</span>
+              {% endif %}
+            </div>
+
+            <div class="book-details">
+              <div class="book-detail"><b>{{ item.book.chunks.count }}</b><span>chunks</span></div>
+              <div class="book-detail"><b>{{ item.book.total_lines }}</b><span>lines</span></div>
+              {% if item.progress and item.progress.current_chunk %}
+                <div class="book-detail"><b>{{ item.progress.percent_complete }}%</b><span>complete</span></div>
+              {% else %}
+                <div class="book-detail"><b>0%</b><span>complete</span></div>
+              {% endif %}
+            </div>
+
+            <div class="book-card-bottom">
+              <div class="meter">
+                <div class="meter-label">
+                  <span>Progress</span>
+                  {% if item.progress and item.progress.current_chunk %}
+                    <span>{{ item.progress.current_chunk.index|add:1 }} of {{ item.book.chunks.count }}</span>
+                  {% else %}
+                    <span>0 of {{ item.book.chunks.count }}</span>
+                  {% endif %}
+                </div>
+                <div class="progress">
+                  {% if item.progress and item.progress.current_chunk %}
+                    <span style="width: {{ item.progress.percent_complete }}%"></span>
+                  {% else %}
+                    <span style="width: 0%"></span>
+                  {% endif %}
+                </div>
+              </div>
+
+              {% if item.progress and item.progress.current_chunk %}
+                <a class="button" href="{% url 'reader:read_chunk' item.book.slug item.progress.current_chunk.id %}">Continue</a>
+              {% else %}
+                <a class="button secondary" href="{{ item.book.get_absolute_url }}">View book</a>
+              {% endif %}
+            </div>
+          </div>
         </article>
       {% empty %}
         <p>No books have been imported yet.</p>
       {% endfor %}
-    </div>
-  </section>
+    </section>
+  </div>
 {% endblock %}

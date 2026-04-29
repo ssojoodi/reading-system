@@ -1,21 +1,27 @@
 <!doctype html>
+{% load static %}
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Personal Librarian{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'reader/book-reading.png' %}" />
+    <link rel="apple-touch-icon" href="{% static 'reader/book-reading.png' %}" />
     <style>
       :root {
         color-scheme: light;
-        --ink: #242826;
-        --muted: #707773;
-        --paper: #fffdfa;
+        --ink: #222522;
+        --muted: #656d68;
+        --paper: #fbfaf6;
         --panel: #ffffff;
         --warm-panel: #fffaf3;
-        --line: #ece6dc;
-        --accent: #7f4a31;
-        --accent-dark: #5e3524;
-        --shadow: rgba(76, 58, 40, 0.07);
+        --line: #e1ded5;
+        --accent: #6f442d;
+        --accent-dark: #563421;
+        --sage: #788a74;
+        --rose: #b46a5b;
+        --mustard: #b78a3c;
+        --shadow: rgba(74, 52, 30, 0.08);
         --serif: Georgia, "Times New Roman", serif;
         --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       }
@@ -26,13 +32,24 @@
 
       body {
         margin: 0;
-        background:
-          radial-gradient(circle at top left, rgba(127, 74, 49, 0.06), transparent 32rem),
-          linear-gradient(135deg, #fffdfa 0%, #faf5ed 100%);
+        background: var(--paper);
         color: var(--ink);
-        font-family: var(--serif);
+        font-family: var(--sans);
         line-height: 1.6;
         min-height: 100vh;
+      }
+
+      body:before {
+        background:
+          linear-gradient(90deg, transparent 0 48px, rgba(111, 68, 45, 0.08) 48px 49px, transparent 49px 100%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(251, 250, 246, 0));
+        content: "";
+        height: 280px;
+        left: 0;
+        pointer-events: none;
+        position: fixed;
+        right: 0;
+        top: 0;
       }
 
       a {
@@ -41,31 +58,42 @@
 
       .shell {
         margin: 0 auto;
-        max-width: 920px;
-        padding: 28px 20px 56px;
+        max-width: 1100px;
+        padding: 28px 24px 64px;
+        position: relative;
       }
 
       .topbar {
         align-items: center;
         display: flex;
-        font-family: var(--sans);
         gap: 16px;
         justify-content: space-between;
-        margin-bottom: 34px;
+        margin-bottom: 64px;
       }
 
       .brand {
+        align-items: center;
         color: var(--ink);
-        font-size: 15px;
-        font-weight: 650;
-        letter-spacing: -0.01em;
+        display: inline-flex;
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 700;
+        gap: 10px;
+        letter-spacing: 0;
         text-decoration: none;
+      }
+
+      .brand-mark {
+        border-radius: 10px;
+        box-shadow: 0 8px 18px rgba(74, 52, 30, 0.08);
+        height: 34px;
+        width: 34px;
       }
 
       .nav {
         align-items: center;
         display: flex;
-        gap: 12px;
+        gap: 14px;
       }
 
       .button,
@@ -78,9 +106,10 @@
         display: inline-block;
         font-family: var(--sans);
         font-size: 14px;
-        font-weight: 550;
+        font-weight: 850;
         line-height: 1.2;
-        padding: 10px 14px;
+        padding: 12px 16px;
+        text-align: center;
         text-decoration: none;
       }
 
@@ -91,14 +120,14 @@
 
       .button.secondary,
       button.secondary {
-        background: rgba(255, 255, 255, 0.72);
+        background: transparent;
         border: 1px solid var(--line);
-        color: var(--accent-dark);
+        color: var(--accent);
       }
 
       .button.secondary:hover,
       button.secondary:hover {
-        background: #f8f3ea;
+        background: #f4eee6;
       }
 
       button:disabled {
@@ -108,39 +137,325 @@
       }
 
       .panel {
-        background: rgba(255, 255, 255, 0.86);
+        background: rgba(255, 255, 255, 0.9);
         border: 1px solid var(--line);
-        border-radius: 16px;
+        border-radius: 8px;
         box-shadow: 0 18px 44px var(--shadow);
         padding: 28px;
       }
 
       .panel h1,
-      .panel h2:not(.notes h2),
-      .book-card,
-      .muted,
-      .actions,
-      label,
-      input {
-        font-family: var(--sans);
+      .panel h2:not(.notes h2) {
+        letter-spacing: 0;
+        line-height: 1.08;
       }
 
-      .panel h1,
-      .panel h2:not(.notes h2) {
-        letter-spacing: -0.035em;
-        line-height: 1.08;
+      .panel h1 {
+        font-size: clamp(36px, 5vw, 56px);
+        margin-top: 0;
+      }
+
+      .bookshelf-layout {
+        display: grid;
+        gap: 40px;
+        grid-template-columns: 340px 1fr;
+      }
+
+      .bookshelf-intro {
+        position: sticky;
+        top: 26px;
+      }
+
+      .eyebrow {
+        color: var(--sage);
+        font-size: 12px;
+        font-weight: 850;
+        letter-spacing: 0.14em;
+        margin: 0 0 14px;
+        text-transform: uppercase;
+      }
+
+      .bookshelf-title {
+        font-family: var(--serif);
+        font-size: clamp(42px, 6vw, 76px);
+        font-weight: 700;
+        letter-spacing: 0;
+        line-height: 0.92;
+        margin: 0;
+      }
+
+      .bookshelf-copy {
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.55;
+        margin: 22px 0 28px;
+      }
+
+      .today-card {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .today-card strong {
+        display: block;
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+
+      .today-card p {
+        color: var(--muted);
+        font-family: var(--serif);
+        font-size: 17px;
+        line-height: 1.5;
+        margin: 0;
       }
 
       .book-grid {
         display: grid;
-        gap: 16px;
+        gap: 22px;
       }
 
       .book-card {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 22px;
+        border-radius: 8px;
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        overflow: visible;
+        position: relative;
+      }
+
+      .book-stripe {
+        background: var(--accent);
+        border-radius: 7px 0 0 7px;
+        min-height: 100%;
+        position: relative;
+        z-index: 2;
+      }
+
+      .book-card:nth-child(even) .book-stripe {
+        background: var(--sage);
+      }
+
+      .book-hover-cover {
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%),
+          linear-gradient(145deg, #7a4b34, #3b2118);
+        border-radius: 6px;
+        box-shadow:
+          0 18px 36px rgba(43, 29, 18, 0.22),
+          inset 10px 0 0 rgba(0, 0, 0, 0.15),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+        color: #fffaf2;
+        display: flex;
+        flex-direction: column;
+        font-family: var(--serif);
+        height: calc(100% - 44px);
+        justify-content: flex-end;
+        left: 18px;
+        min-height: 190px;
+        opacity: 0;
+        overflow: hidden;
+        padding: 14px 12px;
+        pointer-events: none;
+        position: absolute;
+        top: 22px;
+        transform: translateX(-176px) scale(0.96);
+        transition:
+          opacity 180ms ease,
+          transform 260ms cubic-bezier(.2, .8, .2, 1);
+        width: 186px;
+        z-index: 1;
+      }
+
+      .book-card:nth-child(even) .book-hover-cover {
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%),
+          linear-gradient(145deg, #6d7f69, #283f34);
+      }
+
+      .book-hover-cover:before {
+        background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.5));
+        bottom: 0;
+        content: "";
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 40%;
+        z-index: 1;
+      }
+
+      .book-hover-cover img {
+        display: block;
+        height: 100%;
+        inset: 0;
+        object-fit: cover;
+        position: absolute;
+        width: 100%;
+      }
+
+      .book-hover-cover span {
+        font-size: 18px;
+        line-height: 1.05;
+        position: relative;
+        z-index: 2;
+      }
+
+      .book-card:hover .book-hover-cover,
+      .book-card:focus-within .book-hover-cover {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+
+      .book-card:hover .book-card-body,
+      .book-card:focus-within .book-card-body {
+        padding-left: 222px;
+      }
+
+      .book-card-body {
+        padding: 26px;
+        transition: padding-left 260ms cubic-bezier(.2, .8, .2, 1);
+      }
+
+      .book-card-head {
+        align-items: start;
+        display: flex;
+        gap: 18px;
+        justify-content: space-between;
+      }
+
+      .book-card h2 {
+        font-size: clamp(28px, 4vw, 46px);
+        letter-spacing: 0;
+        line-height: 1;
+        margin: 0;
+      }
+
+      .book-card h2 a {
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      .book-card h2 a:hover {
+        color: var(--accent);
+      }
+
+      .book-author {
+        color: var(--muted);
+        font-size: 16px;
+        margin: 10px 0 0;
+      }
+
+      .book-badge {
+        background: #f4eee6;
+        border-radius: 999px;
+        color: var(--accent);
+        flex: 0 0 auto;
+        font-size: 13px;
+        font-weight: 850;
+        padding: 8px 12px;
+      }
+
+      .book-details {
+        border-bottom: 1px solid var(--line);
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 0;
+        grid-template-columns: repeat(3, 1fr);
+        margin: 26px 0;
+      }
+
+      .book-detail {
+        border-right: 1px solid var(--line);
+        min-height: 82px;
+        padding: 15px 12px 15px 0;
+      }
+
+      .book-detail:nth-child(2) {
+        padding-left: 12px;
+      }
+
+      .book-detail:last-child {
+        border-right: 0;
+        padding-left: 12px;
+      }
+
+      .book-detail b {
+        display: block;
+        font-size: 24px;
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+
+      .book-detail span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .book-card-bottom {
+        align-items: center;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1fr auto;
+      }
+
+      .meter {
+        display: grid;
+        gap: 8px;
+      }
+
+      .meter-label {
+        color: var(--muted);
+        display: flex;
+        font-size: 14px;
+        justify-content: space-between;
+      }
+
+      .progress {
+        background: #e9e4dc;
+        border-radius: 999px;
+        height: 9px;
+        overflow: hidden;
+      }
+
+      .progress span {
+        background: linear-gradient(90deg, var(--rose), var(--mustard));
+        display: block;
+        height: 100%;
+      }
+
+      .book-cover {
+        aspect-ratio: 2 / 3;
+        background:
+          linear-gradient(145deg, rgba(127, 74, 49, 0.11), rgba(127, 74, 49, 0.03)),
+          #fffaf3;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(76, 58, 40, 0.1);
+        overflow: hidden;
+        width: 100%;
+      }
+
+      .book-cover img {
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .book-cover.large {
+        max-width: 160px;
+      }
+
+      .book-heading {
+        align-items: start;
+        display: grid;
+        gap: 22px;
+        grid-template-columns: minmax(110px, 160px) 1fr;
       }
 
       .muted {
@@ -158,33 +473,19 @@
         background: var(--warm-panel);
         border: 1px solid var(--line);
         border-left: 3px solid rgba(127, 74, 49, 0.55);
-        border-radius: 0 10px 10px 0;
+        border-radius: 0 8px 8px 0;
         margin-top: 28px;
         padding: 18px 22px;
       }
 
       .notes h2 {
-        font-family: var(--sans);
         font-size: 18px;
-        letter-spacing: -0.02em;
+        letter-spacing: 0;
         margin: 0 0 8px;
       }
 
       .notes div {
         font-family: var(--serif);
-      }
-
-      .progress {
-        background: #eee8de;
-        border-radius: 8px;
-        height: 8px;
-        overflow: hidden;
-      }
-
-      .progress span {
-        background: var(--accent);
-        display: block;
-        height: 100%;
       }
 
       .actions {
@@ -208,7 +509,25 @@
         display: inline;
       }
 
+      @media (max-width: 860px) {
+        .topbar {
+          margin-bottom: 34px;
+        }
+
+        .bookshelf-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .bookshelf-intro {
+          position: static;
+        }
+      }
+
       @media (max-width: 640px) {
+        .shell {
+          padding: 20px 16px 44px;
+        }
+
         .topbar {
           align-items: flex-start;
           flex-direction: column;
@@ -217,13 +536,63 @@
         .panel {
           padding: 20px;
         }
+
+        .book-card {
+          grid-template-columns: 18px 1fr;
+          overflow: hidden;
+        }
+
+        .book-hover-cover {
+          display: none;
+        }
+
+        .book-card:hover .book-card-body,
+        .book-card:focus-within .book-card-body {
+          padding-left: 26px;
+        }
+
+        .book-card-head {
+          flex-direction: column;
+        }
+
+        .book-details {
+          grid-template-columns: 1fr;
+        }
+
+        .book-detail,
+        .book-detail:nth-child(2),
+        .book-detail:last-child {
+          border-bottom: 1px solid var(--line);
+          border-right: 0;
+          padding-left: 0;
+        }
+
+        .book-detail:last-child {
+          border-bottom: 0;
+        }
+
+        .book-card-bottom,
+        .book-heading {
+          grid-template-columns: 1fr;
+        }
+
+        .button {
+          width: 100%;
+        }
+
+        .book-cover {
+          max-width: 120px;
+        }
       }
     </style>
   </head>
   <body>
     <main class="shell">
       <header class="topbar">
-        <a class="brand" href="{% url 'reader:book_list' %}">Personal Librarian</a>
+        <a class="brand" href="{% url 'reader:book_list' %}">
+          <img class="brand-mark" src="{% static 'reader/book-reading.png' %}" alt="" />
+          <span>Personal Librarian</span>
+        </a>
         <nav class="nav">
           {% if request.user.is_authenticated %}
             <span class="muted">{{ request.user.username }}</span>
