@@ -1,0 +1,16 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.env.*
+books/library
+books/reading
+books/finished
+books/summaries
+logs
+output_files
+web/db.sqlite3
+web/staticfiles
+web/data
