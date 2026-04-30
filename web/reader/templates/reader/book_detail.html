@@ -5,18 +5,27 @@
 {% block content %}
   <section class="panel">
     <p><a href="{% url 'reader:book_list' %}">Back to books</a></p>
-    <h1>{{ book.title }}</h1>
-    {% if book.author %}<p class="muted">by {{ book.author }}</p>{% endif %}
-    <p>{{ book.chunks.count }} chunks · {{ book.total_lines }} lines</p>
-    <div class="actions">
-      {% if progress and progress.current_chunk %}
-        <a class="button" href="{% url 'reader:read_chunk' book.slug progress.current_chunk.id %}">Continue reading</a>
-      {% else %}
-        <form method="post" action="{% url 'reader:start_book' book.slug %}">
-          {% csrf_token %}
-          <button type="submit">Start reading</button>
-        </form>
-      {% endif %}
+    <div class="book-heading">
+      <div class="book-cover large" aria-hidden="true">
+        {% if book.thumbnail_data_url %}
+          <img src="{{ book.thumbnail_data_url }}" alt="" />
+        {% endif %}
+      </div>
+      <div>
+        <h1>{{ book.title }}</h1>
+        {% if book.author %}<p class="muted">by {{ book.author }}</p>{% endif %}
+        <p>{{ book.chunks.count }} chunks · {{ book.total_lines }} lines</p>
+        <div class="actions">
+          {% if progress and progress.current_chunk %}
+            <a class="button" href="{% url 'reader:read_chunk' book.slug progress.current_chunk.id %}">Continue reading</a>
+          {% else %}
+            <form method="post" action="{% url 'reader:start_book' book.slug %}">
+              {% csrf_token %}
+              <button type="submit">Start reading</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </section>
 {% endblock %}

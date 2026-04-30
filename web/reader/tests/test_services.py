@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from reader.models import Book, UserBookProgress
+from reader.models import Book, BookChunk, UserBookProgress
 from reader.services import (
     move_progress,
     regenerate_book_chunks,
@@ -40,6 +41,52 @@ class ChunkingTests(TestCase):
         self.assertEqual(book.chunks.count(), 1)
         self.assertEqual(book.chunks.first().text, "Gamma paragraph only.")
         self.assertEqual(book.chunks.first().notes, "")
+
+    def test_regenerate_book_chunks_rejects_finalized_books(self):
+        book = Book.objects.create(
+            slug="finalized-book",
+            title="Finalized Book",
+            full_text="Alpha paragraph.",
+            chunk_size=10,
+        )
+        regenerate_book_chunks(book)
+        book.status = Book.Status.FINALIZED
+        book.save()
+
+        with self.assertRaises(ValidationError):
+            regenerate_book_chunks(book)
+
+    def test_finalized_book_chunks_cannot_be_added_edited_or_deleted(self):
+        book = Book.objects.create(
+            slug="locked-book",
+            title="Locked Book",
+            full_text="Alpha paragraph.",
+            chunk_size=10,
+        )
+        regenerate_book_chunks(book)
+        chunk = book.chunks.first()
+        book.status = Book.Status.FINALIZED
+        book.save()
+
+        with self.assertRaises(ValidationError):
+            BookChunk.objects.create(
+                book=book,
+                index=1,
+                text="New chunk.",
+                start_line=1,
+                end_line=2,
+                char_count=10,
+            )
+
+        chunk.text = "Edited chunk."
+        with self.assertRaises(ValidationError):
+            chunk.save()
+
+        with self.assertRaises(ValidationError):
+            chunk.delete()
+
+        with self.assertRaises(ValidationError):
+            BookChunk.objects.filter(id=chunk.id).delete()
 
 
 class ProgressTests(TestCase):

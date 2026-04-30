@@ -8,7 +8,7 @@ from .services import set_progress_to_chunk, start_book_for_user
 
 @login_required
 def book_list(request):
-    books = Book.objects.prefetch_related("chunks").all()
+    books = Book.objects.filter(status=Book.Status.FINALIZED).prefetch_related("chunks")
     progress_by_book = {
         progress.book_id: progress
         for progress in UserBookProgress.objects.filter(user=request.user).select_related(
@@ -24,7 +24,10 @@ def book_list(request):
 
 @login_required
 def book_detail(request, slug):
-    book = get_object_or_404(Book.objects.prefetch_related("chunks"), slug=slug)
+    book = get_object_or_404(
+        Book.objects.filter(status=Book.Status.FINALIZED).prefetch_related("chunks"),
+        slug=slug,
+    )
     progress = UserBookProgress.objects.filter(user=request.user, book=book).first()
     return render(
         request,
@@ -36,7 +39,7 @@ def book_detail(request, slug):
 @login_required
 @require_POST
 def start_book(request, slug):
-    book = get_object_or_404(Book, slug=slug)
+    book = get_object_or_404(Book, slug=slug, status=Book.Status.FINALIZED)
     progress = start_book_for_user(book, request.user)
     if progress.current_chunk is None:
         return redirect("reader:read_book", slug=book.slug)
@@ -45,7 +48,7 @@ def start_book(request, slug):
 
 @login_required
 def read_book(request, slug):
-    book = get_object_or_404(Book, slug=slug)
+    book = get_object_or_404(Book, slug=slug, status=Book.Status.FINALIZED)
     progress = start_book_for_user(book, request.user)
     current_chunk = progress.current_chunk
     if current_chunk is not None:
@@ -70,7 +73,7 @@ def read_book(request, slug):
 
 @login_required
 def read_chunk(request, slug, chunk_id):
-    book = get_object_or_404(Book, slug=slug)
+    book = get_object_or_404(Book, slug=slug, status=Book.Status.FINALIZED)
     current_chunk = get_object_or_404(BookChunk, id=chunk_id, book=book)
     progress = start_book_for_user(book, request.user)
     set_progress_to_chunk(progress, current_chunk)
@@ -102,7 +105,7 @@ def read_chunk(request, slug, chunk_id):
 @login_required
 @require_POST
 def jump_to_chunk(request, slug):
-    book = get_object_or_404(Book, slug=slug)
+    book = get_object_or_404(Book, slug=slug, status=Book.Status.FINALIZED)
     raw_chunk_number = request.POST.get("chunk_number", "")
     try:
         chunk_number = int(raw_chunk_number)

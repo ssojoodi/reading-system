@@ -1,12 +1,28 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.urls import reverse
 
 
 class Book(models.Model):
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        CHUNKED = "chunked", "Chunked"
+        INTERPRETED = "interpreted", "Interpreted"
+        FINALIZED = "finalized", "Finalized"
+
     slug = models.SlugField(unique=True)
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NEW,
+    )
+    thumbnail_content_type = models.CharField(max_length=100, blank=True)
+    thumbnail_data = models.TextField(blank=True)
     full_text = models.TextField()
     total_lines = models.PositiveIntegerField(default=0)
     chunk_size = models.PositiveIntegerField(default=800)
@@ -21,6 +37,16 @@ class Book(models.Model):
 
     def get_absolute_url(self) -> str:
         return reverse("reader:book_detail", kwargs={"slug": self.slug})
+
+    @property
+    def is_in_catalog(self) -> bool:
+        return self.status == self.Status.FINALIZED
+
+    @property
+    def thumbnail_data_url(self) -> str:
+        if not self.thumbnail_data or not self.thumbnail_content_type:
+            return ""
+        return f"data:{self.thumbnail_content_type};base64,{self.thumbnail_data}"
 
 
 class BookChunk(models.Model):
@@ -42,6 +68,24 @@ class BookChunk(models.Model):
 
     def __str__(self) -> str:
         return f"{self.book} chunk {self.index + 1}"
+
+    def clean(self):
+        super().clean()
+        if self.book_id and self.book.status == Book.Status.FINALIZED:
+            raise ValidationError(
+                "Book chunks cannot be added, edited, or deleted for finalized books."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.book_id and self.book.status == Book.Status.FINALIZED:
+            raise ValidationError(
+                "Book chunks cannot be added, edited, or deleted for finalized books."
+            )
+        return super().delete(*args, **kwargs)
 
 
 class UserBookProgress(models.Model):
@@ -82,3 +126,11 @@ class UserBookProgress(models.Model):
         if not total or self.current_chunk is None:
             return 0
         return round(((self.current_chunk.index + 1) / total) * 100)
+
+
+@receiver(pre_delete, sender=BookChunk)
+def prevent_finalized_book_chunk_delete(sender, instance, **kwargs):
+    if instance.book_id and instance.book.status == Book.Status.FINALIZED:
+        raise ValidationError(
+            "Book chunks cannot be added, edited, or deleted for finalized books."
+        )
