@@ -2,6 +2,10 @@
 
 A reading system for progressing through difficult non-contemporary books in small chunks, generating a plain-English interpretation for each chunk, and sending the latest reading as an HTML email.
 
+## Important Note
+
+This repo is no longer deployed. It needs to be revived.
+
 ## What It Does
 
 - Tracks reading progress per book.
@@ -40,33 +44,59 @@ A reading system for progressing through difficult non-contemporary books in sma
 - Optional: a scheduler such as cron
 - Optional: Docker for running the Django web app
 
-## Django Web App
+## Web App Quickstart
 
-The Django app lives in `web/` so it can be developed and migrated independently from the current `read-book.py` CLI flow.
+The new Django web app lives in `web/` and runs independently from the legacy `read-book.py` CLI flow. It stores books, chunks, notes, and per-user reading progress in SQLite.
 
-### Local setup
+### Run locally
+
+Install dependencies from the repository root:
 
 ```bash
 uv venv
 uv pip install -r requirements.txt
+```
+
+Create the Django database and admin user:
+
+```bash
 cd web
 uv run python manage.py migrate
 uv run python manage.py createsuperuser
+```
+
+Start the development server:
+
+```bash
 uv run python manage.py runserver
 ```
 
-Open `http://127.0.0.1:8000/`, log in with an admin-created account, and use `/admin/` to add books. Books are stored in SQLite and chunked on import.
+Open `http://127.0.0.1:8000/` and log in with the admin user you created. Use `http://127.0.0.1:8000/admin/` to add books. When a book is saved with full text or an uploaded `.txt` file, the app automatically splits it into readable chunks.
 
-### Docker setup
+### Run with Docker
+
+Create a local environment file:
 
 ```bash
 cp .env.example .env
+```
+
+Start the web container:
+
+```bash
 docker compose up --build
+```
+
+In another terminal, initialize the database and create an admin user:
+
+```bash
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 ```
 
-The Docker setup runs the Django app only. The SQLite database is stored in the `django_data` Docker volume.
+Open `http://127.0.0.1:8000/` and log in. The Docker setup runs the Django app only, and the SQLite database is stored in the `django_data` Docker volume.
+
+### Web app configuration
 
 Required Django environment variables:
 
